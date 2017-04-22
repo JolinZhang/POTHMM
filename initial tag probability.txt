@@ -1,0 +1,3 @@
+tag: fw-nns Value: 0.5
+tag: fw-nn Value: 0.25
+tag: fw-in Value: 0.25
