@@ -49,24 +49,31 @@ public class LaplaceSmoothedHMM {
         //Observation likelihood (word／tag)  C(tag, word)+1/C(tag)+m
         int m =  AnalysisData.word_table.size();
 
+        int count = 0;
+
+        Integer valuea;
+        String key_word_tag_value;
+        String key_word_tag_value_table;
 
         for(Map.Entry<String, Integer> entry_word_current : AnalysisData.word_table.entrySet()){
             String current_word = entry_word_current.getKey();
 
+            System.out.println(count);
 
             for(Map.Entry<String, Integer> entry_tag_current : AnalysisData.tag_table.entrySet()){
                 String current_tag = entry_tag_current.getKey();
-                Integer value = AnalysisData.tag_table.get(current_tag);
-                String key_word_tag_value = current_word+ "/"+ current_tag;
-                String key_word_tag_value_table = current_tag +"/"+current_word;
+                valuea = AnalysisData.tag_table.get(current_tag);
+                key_word_tag_value = current_word+ "/"+ current_tag;
+                key_word_tag_value_table = current_tag +"/"+current_word;
 
+                count += 1;
 
                 if(AnalysisData.tag_word_table.containsKey(key_word_tag_value_table)){
                     Integer value_tag_word = AnalysisData.tag_word_table.get(key_word_tag_value_table);
-                    observation_likelihood.put(key_word_tag_value, (float) (value_tag_word+1)/ (value+m));
+                    observation_likelihood.put(key_word_tag_value, (float) (value_tag_word+1)/ (valuea+m));
                 }
                   else{
-                    observation_likelihood.put(key_word_tag_value, (float) 1/(value+m));
+                    observation_likelihood.put(key_word_tag_value, (float) 1/(valuea+m));
                 }
 
 

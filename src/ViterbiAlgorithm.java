@@ -3,14 +3,18 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Map;
 
+import static java.lang.Math.log;
+
 /**
  * Created by Jonelezhang on 3/30/17.
  */
 public class ViterbiAlgorithm  extends LaplaceSmoothedHMM{
 
-
+    // get all tag and predict result into ArrayList result
+    ArrayList<String> result = new ArrayList<>();
 
     public void viterbi( String path_test) {
+
         ReadFile files = new ReadFile();
         for (String s : files.readFiles(path_test)) {
             if (s.length() > 0) {
@@ -37,11 +41,23 @@ public class ViterbiAlgorithm  extends LaplaceSmoothedHMM{
                     if(word_sequence.size()>0){
                         viterbi_Al(word_sequence,tag_sequence );
                     }
-
-
                 }
             }
 
+        }
+
+
+
+        //print the predict result
+        try{
+            PrintWriter writer = new PrintWriter("predict.txt", "UTF-8");
+            for(String prediction_word_tag : result){
+                writer.println(prediction_word_tag);
+            }
+
+            writer.close();
+        } catch (IOException e) {
+            // do something
         }
     }
 
@@ -65,33 +81,44 @@ public class ViterbiAlgorithm  extends LaplaceSmoothedHMM{
             String current_tag = AnalysisData.tag_list.get(i-1);
             if(words_sequence.size()>0) {
                 String word_tag_pair = words_sequence.get(0) + "/" + current_tag;
-                if (observation_likelihood.containsKey(word_tag_pair)) {
+                if(initial_probability.containsKey(current_tag) &&  observation_likelihood.containsKey(word_tag_pair)){
                     viterbiArray[i][0] = (float)1 * initial_probability.get(current_tag) * observation_likelihood.get(word_tag_pair);
-                } else {
+                }else if(initial_probability.containsKey(current_tag) && !observation_likelihood.containsKey(word_tag_pair) ){
                     viterbiArray[i][0] = 1 * initial_probability.get(current_tag) * 0;
+                }else if(!initial_probability.containsKey(current_tag) && observation_likelihood.containsKey(word_tag_pair)){
+                    viterbiArray[i][0] = 1 * 0 * observation_likelihood.get(word_tag_pair) ;
+                }else{
+                    viterbiArray[i][0] = 1* 0 * 0;
                 }
+
             }
             backPointer[i][0] = 0;
         }
 
+
+        String current_tag;
+        String former_tag;
+        String tag_tagformer_pair;
+        String word_tag_pair;
+
         //recursion step
         for(int t = 1; t < observation_num; t++){
             for(int s = 1; s <= state_num; s++){
-                String current_tag = AnalysisData.tag_list.get(s-1);
+                current_tag = AnalysisData.tag_list.get(s-1);
                 float max = 0.0f;
                 for(int sl  =1; sl <= state_num; sl++ ){
-                    String former_tag = AnalysisData.tag_list.get(sl-1);
-                    String tag_tagformer_pair = current_tag+"/"+former_tag;
-                    String word_tag_pair = words_sequence.get(t)+"/"+current_tag;
+                    former_tag = AnalysisData.tag_list.get(sl-1);
+                    tag_tagformer_pair = current_tag+"/"+former_tag;
+                    word_tag_pair = words_sequence.get(t)+"/"+current_tag;
                     float value =  0.0f;
                     if(transition_probabilities.containsKey(tag_tagformer_pair) && observation_likelihood.containsKey(word_tag_pair) ){
                         value = viterbiArray[sl][t-1]*transition_probabilities.get(tag_tagformer_pair)*observation_likelihood.get(word_tag_pair);
                     }else if(!transition_probabilities.containsKey(tag_tagformer_pair) && !observation_likelihood.containsKey(word_tag_pair) ){
-                        value = viterbiArray[sl][t-1]*(0.0f)*(0.0f);
+                        value = viterbiArray[sl][t-1]* 0 * 0;
                     }else if( transition_probabilities.containsKey(tag_tagformer_pair) && !observation_likelihood.containsKey(word_tag_pair) ){
-                        value = viterbiArray[sl][t-1]*transition_probabilities.get(tag_tagformer_pair)*(0.0f);
+                        value = viterbiArray[sl][t-1]*transition_probabilities.get(tag_tagformer_pair)* 0;
                     }else if( !transition_probabilities.containsKey(tag_tagformer_pair) && observation_likelihood.containsKey(word_tag_pair)){
-                        value = viterbiArray[sl][t-1]*(0.0f)*observation_likelihood.get(word_tag_pair);
+                        value =  viterbiArray[sl][t-1]* 0 *observation_likelihood.get(word_tag_pair);
                     }
 
                     if(value > max){
@@ -116,36 +143,6 @@ public class ViterbiAlgorithm  extends LaplaceSmoothedHMM{
         viterbiArray[state_num+1][observation_num-1] = max;
 
 
-        //print value in backPointer
-//        for(int j = 0; j< observation_num; j++){
-//            for(int i = 0; i< state_num+2; i++){
-//                System.out.print( backPointer[i][j]+ "|");
-//            }
-//            System.out.println();
-//        }
-
-        //print value for viterbiArray
-
-
-        // print transition_probabilities into a file
-        try{
-            PrintWriter writer = new PrintWriter("backPointer.txt", "UTF-8");
-            for(int i = 0; i< state_num+2; i++){
-                for(int j = 0; j< observation_num; j++){
-                   writer.print( backPointer[i][j]+ "|");
-                }
-                writer.println();
-            }
-
-            writer.close();
-        } catch (IOException e) {
-            // do something
-        }
-
-
-
-
-
 
 
         //get the predict tag for each word
@@ -157,7 +154,6 @@ public class ViterbiAlgorithm  extends LaplaceSmoothedHMM{
         }
         String word = words_sequence.get(column-1);
         String tag_true = tag_sequence.get(column-1);
-        ArrayList<String> result = new ArrayList<>();
         result.add(word+"/"+tag_true+"/"+tag_predict);
 
         while(column > 1){
@@ -172,17 +168,32 @@ public class ViterbiAlgorithm  extends LaplaceSmoothedHMM{
         }
 
 
-        //print the predict result
-        try{
-            PrintWriter writer = new PrintWriter("predict.txt", "UTF-8");
-            for(String prediction_word_tag : result){
-                writer.println(prediction_word_tag);
-            }
 
-            writer.close();
-        } catch (IOException e) {
-            // do something
-        }
+
+
+        //print value in backPointer
+//        for(int j = 0; j< observation_num; j++){
+//            for(int i = 0; i< state_num+2; i++){
+//                System.out.print( backPointer[i][j]+ "|");
+//            }
+//            System.out.println();
+//        }
+
+
+        // print transition_probabilities into a file
+//        try{
+//            PrintWriter writer = new PrintWriter("backPointer.txt", "UTF-8");
+//            for(int i = 0; i< state_num+2; i++){
+//                for(int j = 0; j< observation_num; j++){
+//                    writer.print( backPointer[i][j]+ "|");
+//                }
+//                writer.println();
+//            }
+//
+//            writer.close();
+//        } catch (IOException e) {
+//            // do something
+//        }
 
     }
 
