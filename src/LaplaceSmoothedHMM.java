@@ -11,7 +11,10 @@ public class LaplaceSmoothedHMM {
     public static Hashtable<String, Float> transition_probabilities = new Hashtable<>();
     public static Hashtable<String, Float> observation_likelihood = new Hashtable<>();
     public static Hashtable<String, Float> initial_probability = new Hashtable<>();
-
+    //get the min value not ave
+    public static float min_transition_probabilities = Float.MAX_VALUE;
+    public static float min_observation_likelihood = Float.MAX_VALUE;
+    public static float min_initial_probability = Float.MAX_VALUE;
 
     public void laplaceSmoothedHMM(){
 
@@ -102,6 +105,9 @@ public class LaplaceSmoothedHMM {
                 String key = entry.getKey();
                 Float value = entry.getValue();
                 writer.println ("tag_tag: " + key + " Value: " + value);
+                if(value < min_transition_probabilities){
+                    min_transition_probabilities = value;
+                }
             }
             writer.close();
         } catch (IOException e) {
@@ -116,11 +122,16 @@ public class LaplaceSmoothedHMM {
                 String key = entry.getKey();
                 Float value = entry.getValue();
                 writer.println ("word_tag: " + key + " Value: " + value);
+                if(value < min_observation_likelihood){
+                    min_observation_likelihood = value;
+                }
             }
             writer.close();
         } catch (IOException e) {
             // do something
         }
+
+
 
         // print initial tag probability into a file
         try{
@@ -129,6 +140,9 @@ public class LaplaceSmoothedHMM {
                 String key = entry.getKey();
                 Float value = entry.getValue();
                 writer.println ("tag: " + key + " Value: " + value);
+                if(value < min_initial_probability){
+                    min_initial_probability = value;
+                }
             }
             writer.close();
         } catch (IOException e) {

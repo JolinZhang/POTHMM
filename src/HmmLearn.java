@@ -11,6 +11,11 @@ public class HmmLearn {
     public static Hashtable<String, Float> transition_probabilities = new Hashtable<>();
     public static Hashtable<String, Float> observation_likelihood = new Hashtable<>();
     public static Hashtable<String, Float> initial_probability = new Hashtable<>();
+    // get 0 as min value
+    public static float min_transition_probabilities = 0.0f;
+    public static float min_observation_likelihood = 0.0f;
+    public static float min_initial_probability = 0.0f;
+
 
     public void hmmLearn(){
         // Transition Probabilities (ti/ ti-1)  = C(ti-1, ti)/C(ti-1)
@@ -91,6 +96,9 @@ public class HmmLearn {
                 String key = entry.getKey();
                 Float value = entry.getValue();
                 writer.println ("tag_tag: " + key + " Value: " + value);
+                if(value < min_transition_probabilities){
+                    min_transition_probabilities = value;
+                }
             }
             writer.close();
         } catch (IOException e) {
@@ -105,6 +113,9 @@ public class HmmLearn {
                 String key = entry.getKey();
                 Float value = entry.getValue();
                 writer.println ("word_tag: " + key + " Value: " + value);
+                if(value < min_observation_likelihood){
+                    min_observation_likelihood = value;
+                }
             }
             writer.close();
         } catch (IOException e) {
@@ -118,6 +129,9 @@ public class HmmLearn {
                 String key = entry.getKey();
                 Float value = entry.getValue();
                 writer.println ("tag: " + key + " Value: " + value);
+                if(value < min_initial_probability){
+                    min_initial_probability = value;
+                }
             }
             writer.close();
         } catch (IOException e) {

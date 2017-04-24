@@ -1,7 +1,5 @@
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Map;
+import java.util.*;
 
 import static java.lang.Math.log;
 
@@ -82,13 +80,13 @@ public class ViterbiAlgorithm  extends LaplaceSmoothedHMM{
             if(words_sequence.size()>0) {
                 String word_tag_pair = words_sequence.get(0) + "/" + current_tag;
                 if(initial_probability.containsKey(current_tag) &&  observation_likelihood.containsKey(word_tag_pair)){
-                    viterbiArray[i][0] = (float)1 * initial_probability.get(current_tag) * observation_likelihood.get(word_tag_pair);
+                    viterbiArray[i][0] = (float) log(initial_probability.get(current_tag)) + (float)log(observation_likelihood.get(word_tag_pair));
                 }else if(initial_probability.containsKey(current_tag) && !observation_likelihood.containsKey(word_tag_pair) ){
-                    viterbiArray[i][0] = 1 * initial_probability.get(current_tag) * 0;
+                    viterbiArray[i][0] =  (float)  log(initial_probability.get(current_tag)) + (float)log(min_observation_likelihood);
                 }else if(!initial_probability.containsKey(current_tag) && observation_likelihood.containsKey(word_tag_pair)){
-                    viterbiArray[i][0] = 1 * 0 * observation_likelihood.get(word_tag_pair) ;
+                    viterbiArray[i][0] = (float)  log(min_initial_probability) + (float)log(observation_likelihood.get(word_tag_pair));
                 }else{
-                    viterbiArray[i][0] = 1* 0 * 0;
+                    viterbiArray[i][0] = (float)  log(min_initial_probability) + (float)log(min_observation_likelihood);
                 }
 
             }
@@ -105,20 +103,20 @@ public class ViterbiAlgorithm  extends LaplaceSmoothedHMM{
         for(int t = 1; t < observation_num; t++){
             for(int s = 1; s <= state_num; s++){
                 current_tag = AnalysisData.tag_list.get(s-1);
-                float max = 0.0f;
+                float max = - Float.MAX_VALUE;
                 for(int sl  =1; sl <= state_num; sl++ ){
                     former_tag = AnalysisData.tag_list.get(sl-1);
                     tag_tagformer_pair = current_tag+"/"+former_tag;
                     word_tag_pair = words_sequence.get(t)+"/"+current_tag;
                     float value =  0.0f;
                     if(transition_probabilities.containsKey(tag_tagformer_pair) && observation_likelihood.containsKey(word_tag_pair) ){
-                        value = viterbiArray[sl][t-1]*transition_probabilities.get(tag_tagformer_pair)*observation_likelihood.get(word_tag_pair);
+                        value = viterbiArray[sl][t-1] +(float)  log(transition_probabilities.get(tag_tagformer_pair)) + (float)log(observation_likelihood.get(word_tag_pair));
                     }else if(!transition_probabilities.containsKey(tag_tagformer_pair) && !observation_likelihood.containsKey(word_tag_pair) ){
-                        value = viterbiArray[sl][t-1]* 0 * 0;
+                        value = viterbiArray[sl][t-1] +(float)  log(min_transition_probabilities) + (float)log(min_observation_likelihood);
                     }else if( transition_probabilities.containsKey(tag_tagformer_pair) && !observation_likelihood.containsKey(word_tag_pair) ){
-                        value = viterbiArray[sl][t-1]*transition_probabilities.get(tag_tagformer_pair)* 0;
+                        value = viterbiArray[sl][t-1] + (float) log(transition_probabilities.get(tag_tagformer_pair)) + (float)log(min_observation_likelihood);
                     }else if( !transition_probabilities.containsKey(tag_tagformer_pair) && observation_likelihood.containsKey(word_tag_pair)){
-                        value =  viterbiArray[sl][t-1]* 0 *observation_likelihood.get(word_tag_pair);
+                        value = viterbiArray[sl][t-1] + (float) log(min_transition_probabilities) + (float) log(observation_likelihood.get(word_tag_pair));
                     }
 
                     if(value > max){
@@ -132,9 +130,9 @@ public class ViterbiAlgorithm  extends LaplaceSmoothedHMM{
         }
 
         //end step
-        float max = 0.0f;
+        float max = -Float.MAX_VALUE;
         for(int s0 =1; s0<=state_num; s0++ ){
-            float value = viterbiArray[s0][observation_num-1]*1;
+            float value = viterbiArray[s0][observation_num-1];
             if(value > max){
                 max = value;
                 backPointer[state_num+1][observation_num-1] = s0;
@@ -181,19 +179,32 @@ public class ViterbiAlgorithm  extends LaplaceSmoothedHMM{
 
 
         // print transition_probabilities into a file
-//        try{
-//            PrintWriter writer = new PrintWriter("backPointer.txt", "UTF-8");
-//            for(int i = 0; i< state_num+2; i++){
-//                for(int j = 0; j< observation_num; j++){
-//                    writer.print( backPointer[i][j]+ "|");
-//                }
-//                writer.println();
-//            }
-//
-//            writer.close();
-//        } catch (IOException e) {
-//            // do something
-//        }
+        try{
+            PrintWriter writer = new PrintWriter("backPointer.txt", "UTF-8");
+            for(int i = 0; i< state_num+2; i++){
+                writer.print( i +  "|");
+                for(int j = 0; j< observation_num; j++){
+                        writer.print( backPointer[i][j]+ "|");
+                }
+                writer.println();
+            }
+
+            writer.close();
+        } catch (IOException e) {
+            // do something
+        }
+
+
+        // print tag_list
+        try{
+            PrintWriter writer = new PrintWriter("tag_list.txt", "UTF-8");
+            for(int i = 1; i <= AnalysisData.tag_list.size(); i++ ){
+                writer.println(i+":"+AnalysisData.tag_list.get(i-1));
+            }
+            writer.close();
+        }catch(IOException e){
+
+        }
 
     }
 
